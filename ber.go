@@ -290,7 +290,14 @@ func EncodeInteger(val uint64) []byte {
 		mask = mask >> 8
 	}
 
-	return out.Bytes()
+	byteSlice := out.Bytes()
+
+	// if first bit in first byte is 1 it is necessary to append a leading 00 byte to make signum clear
+	// otherwise it happens that a request with messageId => 02 01 80 get response with messageId => 02 04 FF FF FF 80
+	if len(byteSlice) > 0 && byteSlice[0]&byte(128) != 0 {
+		return append([]byte{0x00}, byteSlice...)
+	}
+	return byteSlice
 }
 
 func DecodePacket(data []byte) *Packet {
