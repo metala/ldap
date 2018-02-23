@@ -21,7 +21,7 @@ func TestBindAnonOK(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.BindFunc("", bindAnonOK{})
+		s.Bind = BindAnonOK
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -80,7 +80,7 @@ func TestBindSimpleOK(t *testing.T) {
 	ln, addr := mustListen()
 	go func() {
 		s.SearchFunc("", searchSimple{})
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -112,7 +112,7 @@ func TestBindSimpleFailBadPw(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -144,7 +144,7 @@ func TestBindSimpleFailBadDn(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -191,7 +191,7 @@ func TestBindSSL(t *testing.T) {
 	ldapURLSSL := "ldaps://" + ln.Addr().String()
 
 	go func() {
-		s.BindFunc("", bindAnonOK{})
+		s.Bind = BindAnonOK
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -225,7 +225,7 @@ func TestBindPanic(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.BindFunc("", bindPanic{})
+		s.Bind = BindPanic
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -268,7 +268,7 @@ func TestSearchStats(t *testing.T) {
 
 	go func() {
 		s.SearchFunc("", searchSimple{})
-		s.BindFunc("", bindAnonOK{})
+		s.Bind = BindAnonOK
 		s.SetStats(true)
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -297,43 +297,29 @@ func TestSearchStats(t *testing.T) {
 	}
 }
 
-/////////////////////////
-type bindAnonOK struct {
-}
-
-func (b bindAnonOK) Bind(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
+func BindAnonOK(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
 	if bindDN == "" && bindSimplePw == "" {
 		return LDAPResultSuccess, nil
 	}
 	return LDAPResultInvalidCredentials, nil
 }
 
-type bindSimple struct {
-}
-
-func (b bindSimple) Bind(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
+func BindSimple(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
 	if bindDN == "cn=testy,o=testers,c=test" && bindSimplePw == "iLike2test" {
 		return LDAPResultSuccess, nil
 	}
 	return LDAPResultInvalidCredentials, nil
 }
 
-type bindSimple2 struct {
-}
-
-func (b bindSimple2) Bind(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
+func BindSimple2(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
 	if bindDN == "cn=testy,o=testers,c=testz" && bindSimplePw == "ZLike2test" {
 		return LDAPResultSuccess, nil
 	}
 	return LDAPResultInvalidCredentials, nil
 }
 
-type bindPanic struct {
-}
-
-func (b bindPanic) Bind(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
+func BindPanic(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
 	panic("test panic at the disco")
-	return LDAPResultInvalidCredentials, nil
 }
 
 type searchSimple struct {

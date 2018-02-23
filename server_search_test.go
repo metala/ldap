@@ -15,7 +15,7 @@ func TestSearchSimpleOK(t *testing.T) {
 	ln, addr := mustListen()
 	go func() {
 		s.SearchFunc("", searchSimple{})
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -57,7 +57,7 @@ func TestSearchSizelimit(t *testing.T) {
 	go func() {
 		s.EnforceLDAP = true
 		s.SearchFunc("", searchSimple{})
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -144,51 +144,6 @@ func TestSearchSizelimit(t *testing.T) {
 }
 
 /////////////////////////
-func TestBindSearchMulti(t *testing.T) {
-	done := make(chan bool)
-	s := NewServer()
-	defer s.Close()
-	ln, addr := mustListen()
-	go func() {
-		s.BindFunc("", bindSimple{})
-		s.BindFunc("c=testz", bindSimple2{})
-		s.SearchFunc("", searchSimple{})
-		s.SearchFunc("c=testz", searchSimple2{})
-		if err := s.Serve(ln); err != nil {
-			t.Errorf("s.Serve failed: %s", err.Error())
-		}
-	}()
-
-	go func() {
-		cmd := exec.Command("ldapsearch", "-H", "ldap://"+addr, "-x", "-b", "o=testers,c=test",
-			"-D", "cn=testy,o=testers,c=test", "-w", "iLike2test", "cn=ned")
-		out, _ := cmd.CombinedOutput()
-		if !strings.Contains(string(out), "result: 0 Success") {
-			t.Errorf("error routing default bind/search functions: %v", string(out))
-		}
-		if !strings.Contains(string(out), "dn: cn=ned,o=testers,c=test") {
-			t.Errorf("search default routing failed: %v", string(out))
-		}
-		cmd = exec.Command("ldapsearch", "-H", "ldap://"+addr, "-x", "-b", "o=testers,c=testz",
-			"-D", "cn=testy,o=testers,c=testz", "-w", "ZLike2test", "cn=hamburger")
-		out, _ = cmd.CombinedOutput()
-		if !strings.Contains(string(out), "result: 0 Success") {
-			t.Errorf("error routing custom bind/search functions: %v", string(out))
-		}
-		if !strings.Contains(string(out), "dn: cn=hamburger,o=testers,c=testz") {
-			t.Errorf("search custom routing failed: %v", string(out))
-		}
-		done <- true
-	}()
-
-	select {
-	case <-done:
-	case <-time.After(timeout):
-		t.Errorf("ldapsearch command timed out")
-	}
-}
-
-/////////////////////////
 func TestSearchPanic(t *testing.T) {
 	done := make(chan bool)
 	s := NewServer()
@@ -196,7 +151,7 @@ func TestSearchPanic(t *testing.T) {
 	ln, addr := mustListen()
 	go func() {
 		s.SearchFunc("", searchPanic{})
-		s.BindFunc("", bindAnonOK{})
+		s.Bind = BindAnonOK
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -262,7 +217,7 @@ func TestSearchFiltering(t *testing.T) {
 	go func() {
 		s.EnforceLDAP = true
 		s.SearchFunc("", searchSimple{})
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -298,7 +253,7 @@ func TestSearchAttributes(t *testing.T) {
 	go func() {
 		s.EnforceLDAP = true
 		s.SearchFunc("", searchSimple{})
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -341,7 +296,7 @@ func TestSearchScope(t *testing.T) {
 	go func() {
 		s.EnforceLDAP = true
 		s.SearchFunc("", searchSimple{})
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
@@ -386,7 +341,7 @@ func TestSearchScope(t *testing.T) {
 
 	select {
 	case <-done:
-	case <-time.After(2*timeout):
+	case <-time.After(2 * timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
 }
@@ -398,7 +353,7 @@ func TestSearchControls(t *testing.T) {
 	ln, addr := mustListen()
 	go func() {
 		s.SearchFunc("", searchControls{})
-		s.BindFunc("", bindSimple{})
+		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
 		}
