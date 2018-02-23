@@ -1,9 +1,9 @@
-package ldap
+package ldapserver
 
 import (
 	"log"
 
-	"github.com/nmcclain/asn1-ber"
+	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
 )
 
 // debbuging type

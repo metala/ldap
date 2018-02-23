@@ -1,4 +1,4 @@
-package ldap
+package ldapserver
 
 import (
 	"os/exec"

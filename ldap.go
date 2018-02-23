@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package ldap
+package ldapserver
 
 import (
 	"errors"
 	"fmt"
 	"io/ioutil"
 
-	"github.com/nmcclain/asn1-ber"
+	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
 )
 
 // LDAP Application Codes

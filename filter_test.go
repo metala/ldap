@@ -1,10 +1,10 @@
-package ldap
+package ldapserver
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/nmcclain/asn1-ber"
+	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
 )
 
 type compileTest struct {

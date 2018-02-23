@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nmcclain/ldap"
+	"github.com/mark-rushakoff/ldapserver"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	l, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", ldapServer, ldapPort))
+	l, err := ldapserver.Dial("tcp", fmt.Sprintf("%s:%d", ldapServer, ldapPort))
 	if err != nil {
 		log.Fatalf("ERROR: %s\n", err.Error())
 	}
@@ -36,9 +36,9 @@ func main() {
 		log.Printf("ERROR: Cannot bind: %s\n", err.Error())
 		return
 	}
-	search := ldap.NewSearchRequest(
+	search := ldapserver.NewSearchRequest(
 		baseDN,
-		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		ldapserver.ScopeWholeSubtree, ldapserver.NeverDerefAliases, 0, 0, false,
 		filter,
 		Attributes,
 		nil)

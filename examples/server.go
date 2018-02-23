@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/nmcclain/ldap"
+	"github.com/mark-rushakoff/ldapserver"
 	"log"
 	"net"
 )
@@ -16,7 +16,7 @@ import (
 
 ///////////// Run a simple LDAP server
 func main() {
-	s := ldap.NewServer()
+	s := ldapserver.NewServer()
 
 	// register Bind and Search function handlers
 	handler := ldapHandler{}
@@ -35,32 +35,32 @@ type ldapHandler struct {
 }
 
 ///////////// Allow anonymous binds only
-func (h ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldap.LDAPResultCode, error) {
+func (h ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (ldapserver.LDAPResultCode, error) {
 	if bindDN == "" && bindSimplePw == "" {
-		return ldap.LDAPResultSuccess, nil
+		return ldapserver.LDAPResultSuccess, nil
 	}
-	return ldap.LDAPResultInvalidCredentials, nil
+	return ldapserver.LDAPResultInvalidCredentials, nil
 }
 
 ///////////// Return some hardcoded search results - we'll respond to any baseDN for testing
-func (h ldapHandler) Search(boundDN string, searchReq ldap.SearchRequest, conn net.Conn) (ldap.ServerSearchResult, error) {
-	entries := []*ldap.Entry{
-		&ldap.Entry{"cn=ned," + searchReq.BaseDN, []*ldap.EntryAttribute{
-			&ldap.EntryAttribute{"cn", []string{"ned"}},
-			&ldap.EntryAttribute{"uidNumber", []string{"5000"}},
-			&ldap.EntryAttribute{"accountStatus", []string{"active"}},
-			&ldap.EntryAttribute{"uid", []string{"ned"}},
-			&ldap.EntryAttribute{"description", []string{"ned"}},
-			&ldap.EntryAttribute{"objectClass", []string{"posixAccount"}},
+func (h ldapHandler) Search(boundDN string, searchReq ldapserver.SearchRequest, conn net.Conn) (ldapserver.ServerSearchResult, error) {
+	entries := []*ldapserver.Entry{
+		&ldapserver.Entry{"cn=ned," + searchReq.BaseDN, []*ldapserver.EntryAttribute{
+			&ldapserver.EntryAttribute{"cn", []string{"ned"}},
+			&ldapserver.EntryAttribute{"uidNumber", []string{"5000"}},
+			&ldapserver.EntryAttribute{"accountStatus", []string{"active"}},
+			&ldapserver.EntryAttribute{"uid", []string{"ned"}},
+			&ldapserver.EntryAttribute{"description", []string{"ned"}},
+			&ldapserver.EntryAttribute{"objectClass", []string{"posixAccount"}},
 		}},
-		&ldap.Entry{"cn=trent," + searchReq.BaseDN, []*ldap.EntryAttribute{
-			&ldap.EntryAttribute{"cn", []string{"trent"}},
-			&ldap.EntryAttribute{"uidNumber", []string{"5005"}},
-			&ldap.EntryAttribute{"accountStatus", []string{"active"}},
-			&ldap.EntryAttribute{"uid", []string{"trent"}},
-			&ldap.EntryAttribute{"description", []string{"trent"}},
-			&ldap.EntryAttribute{"objectClass", []string{"posixAccount"}},
+		&ldapserver.Entry{"cn=trent," + searchReq.BaseDN, []*ldapserver.EntryAttribute{
+			&ldapserver.EntryAttribute{"cn", []string{"trent"}},
+			&ldapserver.EntryAttribute{"uidNumber", []string{"5005"}},
+			&ldapserver.EntryAttribute{"accountStatus", []string{"active"}},
+			&ldapserver.EntryAttribute{"uid", []string{"trent"}},
+			&ldapserver.EntryAttribute{"description", []string{"trent"}},
+			&ldapserver.EntryAttribute{"objectClass", []string{"posixAccount"}},
 		}},
 	}
-	return ldap.ServerSearchResult{entries, []string{}, []ldap.Control{}, ldap.LDAPResultSuccess}, nil
+	return ldapserver.ServerSearchResult{entries, []string{}, []ldapserver.Control{}, ldapserver.LDAPResultSuccess}, nil
 }

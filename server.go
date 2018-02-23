@@ -1,8 +1,8 @@
-package ldap
+package ldapserver
 
 import (
 	"crypto/tls"
-	"github.com/nmcclain/asn1-ber"
+	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
 	"io"
 	"log"
 	"net"

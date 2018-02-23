@@ -255,7 +255,7 @@ func ReadPacket(reader io.Reader) (*Packet, error) {
 	return p, nil
 }
 
-func DecodeString(data []byte) (string) {
+func DecodeString(data []byte) string {
 	return string(data)
 }
 

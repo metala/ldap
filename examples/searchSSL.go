@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nmcclain/ldap"
+	"github.com/mark-rushakoff/ldapserver"
 )
 
 var (
@@ -22,16 +22,16 @@ var (
 )
 
 func main() {
-	l, err := ldap.DialSSL("tcp", fmt.Sprintf("%s:%d", LdapServer, LdapPort), nil)
+	l, err := ldapserver.DialSSL("tcp", fmt.Sprintf("%s:%d", LdapServer, LdapPort), nil)
 	if err != nil {
 		log.Fatalf("ERROR: %s\n", err.String())
 	}
 	defer l.Close()
 	// l.Debug = true
 
-	search := ldap.NewSearchRequest(
+	search := ldapserver.NewSearchRequest(
 		BaseDN,
-		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		ldapserver.ScopeWholeSubtree, ldapserver.NeverDerefAliases, 0, 0, false,
 		Filter,
 		Attributes,
 		nil)

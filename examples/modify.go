@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/nmcclain/ldap"
+	"github.com/mark-rushakoff/ldapserver"
 )
 
 var (
@@ -23,10 +23,10 @@ var (
 	Filter     string = "(cn=kirkj)"
 )
 
-func search(l *ldap.Conn, filter string, attributes []string) (*ldap.Entry, *ldap.Error) {
-	search := ldap.NewSearchRequest(
+func search(l *ldapserver.Conn, filter string, attributes []string) (*ldapserver.Entry, *ldapserver.Error) {
+	search := ldapserver.NewSearchRequest(
 		BaseDN,
-		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		ldapserver.ScopeWholeSubtree, ldapserver.NeverDerefAliases, 0, 0, false,
 		filter,
 		attributes,
 		nil)
@@ -39,13 +39,13 @@ func search(l *ldap.Conn, filter string, attributes []string) (*ldap.Entry, *lda
 
 	log.Printf("Search: %s -> num of entries = %d\n", search.Filter, len(sr.Entries))
 	if len(sr.Entries) == 0 {
-		return nil, ldap.NewError(ldap.ErrorDebugging, errors.New(fmt.Sprintf("no entries found for: %s", filter)))
+		return nil, ldapserver.NewError(ldapserver.ErrorDebugging, errors.New(fmt.Sprintf("no entries found for: %s", filter)))
 	}
 	return sr.Entries[0], nil
 }
 
 func main() {
-	l, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", LdapServer, LdapPort))
+	l, err := ldapserver.Dial("tcp", fmt.Sprintf("%s:%d", LdapServer, LdapPort))
 	if err != nil {
 		log.Fatalf("ERROR: %s\n", err.Error())
 	}
@@ -62,7 +62,7 @@ func main() {
 	entry.PrettyPrint(0)
 
 	log.Printf("modify the mail address and add a description ... \n")
-	modify := ldap.NewModifyRequest(entry.DN)
+	modify := ldapserver.NewModifyRequest(entry.DN)
 	modify.Add("description", []string{"Captain of the USS Enterprise"})
 	modify.Replace("mail", []string{"captain@enterprise.org"})
 	if err := l.Modify(modify); err != nil {
@@ -76,7 +76,7 @@ func main() {
 	entry.PrettyPrint(0)
 
 	log.Printf("reset the entry ... \n")
-	modify = ldap.NewModifyRequest(entry.DN)
+	modify = ldapserver.NewModifyRequest(entry.DN)
 	modify.Delete("description", []string{})
 	modify.Replace("mail", []string{"james.kirk@enterprise.org"})
 	if err := l.Modify(modify); err != nil {

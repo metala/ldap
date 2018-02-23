@@ -57,14 +57,14 @@
 //
 //
 
-package ldap
+package ldapserver
 
 import (
 	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/nmcclain/asn1-ber"
+	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
 )
 
 const (

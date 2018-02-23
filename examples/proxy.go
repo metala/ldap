@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/nmcclain/ldap"
+	"github.com/mark-rushakoff/ldapserver"
 	"log"
 	"net"
 	"sync"
@@ -18,7 +18,7 @@ type ldapHandler struct {
 
 ///////////// Run a simple LDAP proxy
 func main() {
-	s := ldap.NewServer()
+	s := ldapserver.NewServer()
 
 	handler := ldapHandler{
 		sessions:   make(map[string]session),
@@ -39,7 +39,7 @@ func main() {
 type session struct {
 	id   string
 	c    net.Conn
-	ldap *ldap.Conn
+	ldap *ldapserver.Conn
 }
 
 func (h ldapHandler) getSession(conn net.Conn) (session, error) {
@@ -48,7 +48,7 @@ func (h ldapHandler) getSession(conn net.Conn) (session, error) {
 	s, ok := h.sessions[id] // use server connection if it exists
 	h.lock.Unlock()
 	if !ok { // open a new server connection if not
-		l, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", h.ldapServer, h.ldapPort))
+		l, err := ldapserver.Dial("tcp", fmt.Sprintf("%s:%d", h.ldapServer, h.ldapPort))
 		if err != nil {
 			return session{}, err
 		}
@@ -64,32 +64,32 @@ func (h ldapHandler) getSession(conn net.Conn) (session, error) {
 func (h ldapHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (uint64, error) {
 	s, err := h.getSession(conn)
 	if err != nil {
-		return ldap.LDAPResultOperationsError, err
+		return ldapserver.LDAPResultOperationsError, err
 	}
 	if err := s.ldap.Bind(bindDN, bindSimplePw); err != nil {
-		return ldap.LDAPResultOperationsError, err
+		return ldapserver.LDAPResultOperationsError, err
 	}
-	return ldap.LDAPResultSuccess, nil
+	return ldapserver.LDAPResultSuccess, nil
 }
 
 /////////////
-func (h ldapHandler) Search(boundDN string, searchReq ldap.SearchRequest, conn net.Conn) (ldap.ServerSearchResult, error) {
+func (h ldapHandler) Search(boundDN string, searchReq ldapserver.SearchRequest, conn net.Conn) (ldapserver.ServerSearchResult, error) {
 	s, err := h.getSession(conn)
 	if err != nil {
-		return ldap.ServerSearchResult{ResultCode: ldap.LDAPResultOperationsError}, nil
+		return ldapserver.ServerSearchResult{ResultCode: ldapserver.LDAPResultOperationsError}, nil
 	}
-	search := ldap.NewSearchRequest(
+	search := ldapserver.NewSearchRequest(
 		searchReq.BaseDN,
-		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		ldapserver.ScopeWholeSubtree, ldapserver.NeverDerefAliases, 0, 0, false,
 		searchReq.Filter,
 		searchReq.Attributes,
 		nil)
 	sr, err := s.ldap.Search(search)
 	if err != nil {
-		return ldap.ServerSearchResult{}, err
+		return ldapserver.ServerSearchResult{}, err
 	}
 	//log.Printf("P: Search OK: %s -> num of entries = %d\n", search.Filter, len(sr.Entries))
-	return ldap.ServerSearchResult{sr.Entries, []string{}, []ldap.Control{}, ldap.LDAPResultSuccess}, nil
+	return ldapserver.ServerSearchResult{sr.Entries, []string{}, []ldapserver.Control{}, ldapserver.LDAPResultSuccess}, nil
 }
 func (h ldapHandler) Close(conn net.Conn) error {
 	conn.Close() // close connection to the server when then client is closed
