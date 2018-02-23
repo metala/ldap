@@ -9,11 +9,10 @@ import (
 
 //
 func TestSearchSimpleOK(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchSimple{})
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -47,16 +46,14 @@ func TestSearchSimpleOK(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 func TestSearchSizelimit(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
 		s.EnforceLDAP = true
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchSimple{})
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -142,16 +139,14 @@ func TestSearchSizelimit(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
 func TestBindSearchMulti(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", bindSimple{})
 		s.BindFunc("c=testz", bindSimple2{})
 		s.SearchFunc("", searchSimple{})
@@ -188,17 +183,14 @@ func TestBindSearchMulti(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-
-	quit <- true
 }
 
 /////////////////////////
 func TestSearchPanic(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchPanic{})
 		s.BindFunc("", bindAnonOK{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -220,7 +212,6 @@ func TestSearchPanic(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
@@ -260,12 +251,11 @@ var searchFilterTestFilters = []compileSearchFilterTest{
 
 /////////////////////////
 func TestSearchFiltering(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
 		s.EnforceLDAP = true
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchSimple{})
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -292,17 +282,15 @@ func TestSearchFiltering(t *testing.T) {
 			t.Errorf("ldapsearch command timed out")
 		}
 	}
-	quit <- true
 }
 
 /////////////////////////
 func TestSearchAttributes(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
 		s.EnforceLDAP = true
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchSimple{})
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -336,17 +324,15 @@ func TestSearchAttributes(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
 func TestSearchScope(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
 		s.EnforceLDAP = true
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchSimple{})
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -396,15 +382,13 @@ func TestSearchScope(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 func TestSearchControls(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchControls{})
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -449,5 +433,4 @@ func TestSearchControls(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }

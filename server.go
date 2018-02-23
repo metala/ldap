@@ -58,9 +58,10 @@ type Server struct {
 	ExtendedFns map[string]Extender
 	UnbindFns   map[string]Unbinder
 	CloseFns    map[string]Closer
-	Quit        chan bool
 	EnforceLDAP bool
 	Stats       *Stats
+
+	closing chan struct{}
 }
 
 type Stats struct {
@@ -81,7 +82,6 @@ type ServerSearchResult struct {
 //
 func NewServer() *Server {
 	s := new(Server)
-	s.Quit = make(chan bool)
 
 	d := defaultHandler{}
 	s.BindFns = make(map[string]Binder)
@@ -107,6 +107,8 @@ func NewServer() *Server {
 	s.UnbindFunc("", d)
 	s.CloseFunc("", d)
 	s.Stats = nil
+
+	s.closing = make(chan struct{})
 	return s
 }
 func (server *Server) BindFunc(baseDN string, f Binder) {
@@ -141,9 +143,6 @@ func (server *Server) UnbindFunc(baseDN string, f Unbinder) {
 }
 func (server *Server) CloseFunc(baseDN string, f Closer) {
 	server.CloseFns[baseDN] = f
-}
-func (server *Server) QuitChannel(quit chan bool) {
-	server.Quit = quit
 }
 
 func (server *Server) ListenAndServeTLS(listenString string, certFile string, keyFile string) error {
@@ -207,18 +206,26 @@ func (server *Server) Serve(ln net.Listener) error {
 		}
 	}()
 
-listener:
 	for {
 		select {
 		case c := <-newConn:
 			server.Stats.countConns(1)
 			go server.handleConnection(c)
-		case <-server.Quit:
+		case <-server.closing:
 			ln.Close()
-			break listener
+			return nil
 		}
 	}
-	return nil
+}
+
+// Close closes the underlying listener and exits the Serve method.
+// Close is not safe for concurrent use.
+func (server *Server) Close() {
+	select {
+	case <-server.closing:
+	default:
+		close(server.closing)
+	}
 }
 
 //

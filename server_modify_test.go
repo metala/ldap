@@ -10,11 +10,10 @@ import (
 
 //
 func TestAdd(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", modifyTestHandler{})
 		s.AddFunc("", modifyTestHandler{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -42,16 +41,14 @@ func TestAdd(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapadd command timed out")
 	}
-	quit <- true
 }
 
 //
 func TestDelete(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", modifyTestHandler{})
 		s.DeleteFunc("", modifyTestHandler{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -76,15 +73,13 @@ func TestDelete(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapdelete command timed out")
 	}
-	quit <- true
 }
 
 func TestModify(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", modifyTestHandler{})
 		s.ModifyFunc("", modifyTestHandler{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -109,7 +104,6 @@ func TestModify(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapadd command timed out")
 	}
-	quit <- true
 }
 
 /*

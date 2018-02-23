@@ -17,11 +17,10 @@ var serverBaseDN = "o=testers,c=test"
 
 /////////////////////////
 func TestBindAnonOK(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", bindAnonOK{})
 		if err := s.ListenAndServe(listenString); err != nil {
 			t.Errorf("s.ListenAndServe failed: %s", err.Error())
@@ -42,16 +41,14 @@ func TestBindAnonOK(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
 func TestBindAnonFail(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		if err := s.ListenAndServe(listenString); err != nil {
 			t.Errorf("s.ListenAndServe failed: %s", err.Error())
 		}
@@ -72,17 +69,14 @@ func TestBindAnonFail(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	time.Sleep(timeout)
-	quit <- true
 }
 
 /////////////////////////
 func TestBindSimpleOK(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchSimple{})
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
@@ -107,16 +101,14 @@ func TestBindSimpleOK(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
 func TestBindSimpleFailBadPw(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
 			t.Errorf("s.ListenAndServe failed: %s", err.Error())
@@ -140,16 +132,14 @@ func TestBindSimpleFailBadPw(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
 func TestBindSimpleFailBadDn(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", bindSimple{})
 		if err := s.ListenAndServe(listenString); err != nil {
 			t.Errorf("s.ListenAndServe failed: %s", err.Error())
@@ -173,7 +163,6 @@ func TestBindSimpleFailBadDn(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
@@ -181,11 +170,10 @@ func TestBindSSL(t *testing.T) {
 	t.Skip("unclear how to configure ldapsearch command to trust or skip verification of a custom SSL cert")
 	ldapURLSSL := "ldaps://" + listenString
 	longerTimeout := 300 * time.Millisecond
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", bindAnonOK{})
 		if err := s.ListenAndServeTLS(listenString, "tests/cert_DONOTUSE.pem", "tests/key_DONOTUSE.pem"); err != nil {
 			t.Errorf("s.ListenAndServeTLS failed: %s", err.Error())
@@ -211,16 +199,14 @@ func TestBindSSL(t *testing.T) {
 	case <-time.After(longerTimeout * 2):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
 func TestBindPanic(t *testing.T) {
-	quit := make(chan bool)
 	done := make(chan bool)
+	s := NewServer()
+	defer s.Close()
 	go func() {
-		s := NewServer()
-		s.QuitChannel(quit)
 		s.BindFunc("", bindPanic{})
 		if err := s.ListenAndServe(listenString); err != nil {
 			t.Errorf("s.ListenAndServe failed: %s", err.Error())
@@ -241,7 +227,6 @@ func TestBindPanic(t *testing.T) {
 	case <-time.After(timeout):
 		t.Errorf("ldapsearch command timed out")
 	}
-	quit <- true
 }
 
 /////////////////////////
@@ -258,12 +243,11 @@ func TestSearchStats(t *testing.T) {
 	w := testStatsWriter{&bytes.Buffer{}}
 	log.SetOutput(w)
 
-	quit := make(chan bool)
 	done := make(chan bool)
 	s := NewServer()
+	defer s.Close()
 
 	go func() {
-		s.QuitChannel(quit)
 		s.SearchFunc("", searchSimple{})
 		s.BindFunc("", bindAnonOK{})
 		s.SetStats(true)
@@ -292,7 +276,6 @@ func TestSearchStats(t *testing.T) {
 	if stats.Conns != 1 || stats.Binds != 1 {
 		t.Errorf("Stats data missing or incorrect: %v", w.buffer.String())
 	}
-	quit <- true
 }
 
 /////////////////////////
