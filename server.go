@@ -12,10 +12,8 @@ import (
 )
 
 type BindFunc func(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error)
+type SearchFunc func(boundDN string, req SearchRequest, conn net.Conn) (ServerSearchResult, error)
 
-type Searcher interface {
-	Search(boundDN string, req SearchRequest, conn net.Conn) (ServerSearchResult, error)
-}
 type Adder interface {
 	Add(boundDN string, req AddRequest, conn net.Conn) (LDAPResultCode, error)
 }
@@ -47,8 +45,8 @@ type Closer interface {
 //
 type Server struct {
 	Bind BindFunc
+	Search SearchFunc
 
-	SearchFns   map[string]Searcher
 	AddFns      map[string]Adder
 	ModifyFns   map[string]Modifier
 	DeleteFns   map[string]Deleter
@@ -84,7 +82,6 @@ func NewServer() *Server {
 	s := new(Server)
 
 	d := defaultHandler{}
-	s.SearchFns = make(map[string]Searcher)
 	s.AddFns = make(map[string]Adder)
 	s.ModifyFns = make(map[string]Modifier)
 	s.DeleteFns = make(map[string]Deleter)
@@ -96,8 +93,8 @@ func NewServer() *Server {
 	s.CloseFns = make(map[string]Closer)
 
 	s.Bind = d.Bind
+	s.Search = d.Search
 
-	s.SearchFunc("", d)
 	s.AddFunc("", d)
 	s.ModifyFunc("", d)
 	s.DeleteFunc("", d)
@@ -111,9 +108,6 @@ func NewServer() *Server {
 
 	s.closing = make(chan struct{})
 	return s
-}
-func (server *Server) SearchFunc(baseDN string, f Searcher) {
-	server.SearchFns[baseDN] = f
 }
 func (server *Server) AddFunc(baseDN string, f Adder) {
 	server.AddFns[baseDN] = f

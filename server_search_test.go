@@ -14,7 +14,7 @@ func TestSearchSimpleOK(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.SearchFunc("", searchSimple{})
+		s.Search = SearchSimple
 		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -56,7 +56,7 @@ func TestSearchSizelimit(t *testing.T) {
 	ln, addr := mustListen()
 	go func() {
 		s.EnforceLDAP = true
-		s.SearchFunc("", searchSimple{})
+		s.Search = SearchSimple
 		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -150,7 +150,7 @@ func TestSearchPanic(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.SearchFunc("", searchPanic{})
+		s.Search = SearchPanic
 		s.Bind = BindAnonOK
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -216,7 +216,7 @@ func TestSearchFiltering(t *testing.T) {
 	ln, addr := mustListen()
 	go func() {
 		s.EnforceLDAP = true
-		s.SearchFunc("", searchSimple{})
+		s.Search = SearchSimple
 		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -252,7 +252,7 @@ func TestSearchAttributes(t *testing.T) {
 	ln, addr := mustListen()
 	go func() {
 		s.EnforceLDAP = true
-		s.SearchFunc("", searchSimple{})
+		s.Search = SearchSimple
 		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -295,7 +295,7 @@ func TestSearchScope(t *testing.T) {
 	ln, addr := mustListen()
 	go func() {
 		s.EnforceLDAP = true
-		s.SearchFunc("", searchSimple{})
+		s.Search = SearchSimple
 		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -352,7 +352,7 @@ func TestSearchControls(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.SearchFunc("", searchControls{})
+		s.Search = SearchControls
 		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())

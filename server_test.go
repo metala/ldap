@@ -79,7 +79,7 @@ func TestBindSimpleOK(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.SearchFunc("", searchSimple{})
+		s.Search = SearchSimple
 		s.Bind = BindSimple
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -267,7 +267,7 @@ func TestSearchStats(t *testing.T) {
 	ln, addr := mustListen()
 
 	go func() {
-		s.SearchFunc("", searchSimple{})
+		s.Search = SearchSimple
 		s.Bind = BindAnonOK
 		s.SetStats(true)
 		if err := s.Serve(ln); err != nil {
@@ -311,21 +311,11 @@ func BindSimple(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, err
 	return LDAPResultInvalidCredentials, nil
 }
 
-func BindSimple2(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
-	if bindDN == "cn=testy,o=testers,c=testz" && bindSimplePw == "ZLike2test" {
-		return LDAPResultSuccess, nil
-	}
-	return LDAPResultInvalidCredentials, nil
-}
-
 func BindPanic(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
 	panic("test panic at the disco")
 }
 
-type searchSimple struct {
-}
-
-func (s searchSimple) Search(boundDN string, searchReq SearchRequest, conn net.Conn) (ServerSearchResult, error) {
+func SearchSimple(boundDN string, searchReq SearchRequest, conn net.Conn) (ServerSearchResult, error) {
 	entries := []*Entry{
 		&Entry{"cn=ned,o=testers,c=test", []*EntryAttribute{
 			&EntryAttribute{"cn", []string{"ned"}},
@@ -357,36 +347,11 @@ func (s searchSimple) Search(boundDN string, searchReq SearchRequest, conn net.C
 	return ServerSearchResult{entries, []string{}, []Control{}, LDAPResultSuccess}, nil
 }
 
-type searchSimple2 struct {
-}
-
-func (s searchSimple2) Search(boundDN string, searchReq SearchRequest, conn net.Conn) (ServerSearchResult, error) {
-	entries := []*Entry{
-		&Entry{"cn=hamburger,o=testers,c=testz", []*EntryAttribute{
-			&EntryAttribute{"cn", []string{"hamburger"}},
-			&EntryAttribute{"o", []string{"testers"}},
-			&EntryAttribute{"uidNumber", []string{"5000"}},
-			&EntryAttribute{"accountstatus", []string{"active"}},
-			&EntryAttribute{"uid", []string{"hamburger"}},
-			&EntryAttribute{"objectclass", []string{"posixaccount"}},
-		}},
-	}
-	return ServerSearchResult{entries, []string{}, []Control{}, LDAPResultSuccess}, nil
-}
-
-type searchPanic struct {
-}
-
-func (s searchPanic) Search(boundDN string, searchReq SearchRequest, conn net.Conn) (ServerSearchResult, error) {
-	entries := []*Entry{}
+func SearchPanic(boundDN string, searchReq SearchRequest, conn net.Conn) (ServerSearchResult, error) {
 	panic("this is a test panic")
-	return ServerSearchResult{entries, []string{}, []Control{}, LDAPResultSuccess}, nil
 }
 
-type searchControls struct {
-}
-
-func (s searchControls) Search(boundDN string, searchReq SearchRequest, conn net.Conn) (ServerSearchResult, error) {
+func SearchControls(boundDN string, searchReq SearchRequest, conn net.Conn) (ServerSearchResult, error) {
 	entries := []*Entry{}
 	if len(searchReq.Controls) == 1 && searchReq.Controls[0].GetControlType() == "1.2.3.4.5" {
 		newEntry := &Entry{"cn=hamburger,o=testers,c=testz", []*EntryAttribute{
