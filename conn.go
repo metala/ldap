@@ -22,6 +22,8 @@ const (
 	MessageFinish   = 3
 )
 
+const oidStartTLS = "1.3.6.1.4.1.1466.20037"
+
 type messagePacket struct {
 	Op        int
 	MessageID uint64
@@ -150,7 +152,7 @@ func (l *Conn) StartTLS(config *tls.Config) error {
 	packet := ber.Encode(ber.ClassUniversal, ber.TypeConstructed, ber.TagSequence, nil, "LDAP Request")
 	packet.AppendChild(ber.NewInteger(ber.ClassUniversal, ber.TypePrimitive, ber.TagInteger, messageID, "MessageID"))
 	request := ber.Encode(ber.ClassApplication, ber.TypeConstructed, ApplicationExtendedRequest, nil, "Start TLS")
-	request.AppendChild(ber.NewString(ber.ClassContext, ber.TypePrimitive, 0, "1.3.6.1.4.1.1466.20037", "TLS Extended Command"))
+	request.AppendChild(ber.NewString(ber.ClassContext, ber.TypePrimitive, 0, oidStartTLS, "TLS Extended Command"))
 	packet.AppendChild(request)
 	l.Debug.PrintPacket(packet)
 

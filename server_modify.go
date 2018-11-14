@@ -1,9 +1,10 @@
 package ldapserver
 
 import (
-	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
 	"log"
 	"net"
+
+	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
 )
 
 func HandleAddRequest(req *ber.Packet, boundDN string, fns map[string]Adder, conn net.Conn) (resultCode LDAPResultCode) {

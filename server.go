@@ -44,7 +44,7 @@ type Closer interface {
 
 //
 type Server struct {
-	Bind BindFunc
+	Bind   BindFunc
 	Search SearchFunc
 
 	AddFns      map[string]Adder
@@ -58,6 +58,9 @@ type Server struct {
 	CloseFns    map[string]Closer
 	EnforceLDAP bool
 	Stats       *Stats
+
+	// If set, server will accept StartTLS.
+	TLSConfig *tls.Config
 
 	closing chan struct{}
 }
@@ -307,11 +310,26 @@ handler:
 			server.Stats.countUnbinds(1)
 			break handler // simply disconnect
 		case ApplicationExtendedRequest:
-			ldapResultCode := HandleExtendedRequest(req, boundDN, server.ExtendedFns, conn)
+			var tlsConn *tls.Conn
+			if n := len(req.Children); n == 1 || n == 2 {
+				if name := ber.DecodeString(req.Children[0].Data.Bytes()); name == oidStartTLS {
+					tlsConn = tls.Server(conn, server.TLSConfig)
+				}
+			}
+			var ldapResultCode LDAPResultCode
+			if tlsConn == nil {
+				// Wasn't an upgrade. Pass through.
+				ldapResultCode = HandleExtendedRequest(req, boundDN, server.ExtendedFns, conn)
+			} else {
+				ldapResultCode = LDAPResultSuccess
+			}
 			responsePacket := encodeLDAPResponse(messageID, ApplicationExtendedResponse, ldapResultCode, LDAPResultCodeMap[ldapResultCode])
 			if err = sendPacket(conn, responsePacket); err != nil {
 				log.Printf("sendPacket error %s", err.Error())
 				break handler
+			}
+			if tlsConn != nil {
+				conn = tlsConn
 			}
 		case ApplicationAbandonRequest:
 			HandleAbandonRequest(req, boundDN, server.AbandonFns, conn)
