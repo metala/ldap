@@ -2,6 +2,7 @@ package ldapserver
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -17,8 +18,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/golang/go/src/crypto/rand"
 )
 
 var timeout = 400 * time.Millisecond
