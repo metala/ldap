@@ -176,20 +176,24 @@ func (c *selfSignedCert) ServerTLSConfig() *tls.Config {
 	}
 }
 
-func TestStartTLS(t *testing.T) {
-	if runtime.GOOS == "darwin" {
-		defer func() {
-			if t.Failed() {
-				t.Logf(`NOTE: this test won't pass with the built-in Mac ldap utilities.
+func macOsIfFailedWarning(t *testing.T) {
+	if t.Failed() {
+		t.Logf(`NOTE: this test won't pass with the built-in Mac ldap utilities.
 Work around this by using brew install openldap, and running the test as PATH=/usr/local/opt/openldap/bin:$PATH go test.
 
 This test uses environment variables that are respected by OpenLDAP, but the Mac utilities don't let you override
 security settings through environment variables; they expect certificates to be added to the system keychain,
 which is very heavy-handed for a test like this.
 `)
-			}
-		}()
 	}
+
+}
+
+func TestStartTLS(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		defer macOsIfFailedWarning(t)
+	}
+
 	cert := newSelfSignedCert()
 	defer cert.cleanup()
 
@@ -230,6 +234,46 @@ which is very heavy-handed for a test like this.
 	}
 }
 
+func TestStartTLSWithoutTLSConfigDoesNotPanic(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		defer macOsIfFailedWarning(t)
+	}
+
+	s := NewServer()
+	defer s.Close()
+	s.Bind = BindAnonOK
+	s.Search = SearchSimple
+
+	ln, addr := mustListen()
+	go func() {
+		if err := s.Serve(ln); err != nil {
+			t.Errorf("s.Serve failed: %s", err.Error())
+		}
+	}()
+
+	done := make(chan struct{})
+	go func() {
+		cmd := exec.Command("env",
+			"LDAPTLS_REQCERT=allow",
+			"ldapsearch", "-H", "ldap://"+addr, "-ZZ", "-d", "-1", "-x", "-b", "o=testers,c=test")
+		out, err := cmd.CombinedOutput()
+		if err == nil {
+			t.Error(err)
+		}
+
+		if strings.Contains(string(out), "# numEntries: 3") || strings.Contains(string(out), "result: 0 Success") {
+			t.Errorf("search did succeed:\n%s", out)
+		}
+
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(timeout):
+		t.Error("ldapsearch command timed out")
+	}
+}
 func TestEnforcedTLSWithoutTLSConfig(t *testing.T) {
 	s := NewServer()
 	defer s.Close()
@@ -257,18 +301,9 @@ func TestEnforcedTLSWithoutTLSConfig(t *testing.T) {
 }
 func TestEnforcedTLS(t *testing.T) {
 	if runtime.GOOS == "darwin" {
-		defer func() {
-			if t.Failed() {
-				t.Logf(`NOTE: this test won't pass with the built-in Mac ldap utilities.
-Work around this by using brew install openldap, and running the test as PATH=/usr/local/opt/openldap/bin:$PATH go test.
-
-This test uses environment variables that are respected by OpenLDAP, but the Mac utilities don't let you override
-security settings through environment variables; they expect certificates to be added to the system keychain,
-which is very heavy-handed for a test like this.
-`)
-			}
-		}()
+		defer macOsIfFailedWarning(t)
 	}
+
 	cert := newSelfSignedCert()
 	defer cert.cleanup()
 
@@ -312,18 +347,9 @@ which is very heavy-handed for a test like this.
 
 func TestEnforcedTLSFail(t *testing.T) {
 	if runtime.GOOS == "darwin" {
-		defer func() {
-			if t.Failed() {
-				t.Logf(`NOTE: this test won't pass with the built-in Mac ldap utilities.
-Work around this by using brew install openldap, and running the test as PATH=/usr/local/opt/openldap/bin:$PATH go test.
-
-This test uses environment variables that are respected by OpenLDAP, but the Mac utilities don't let you override
-security settings through environment variables; they expect certificates to be added to the system keychain,
-which is very heavy-handed for a test like this.
-`)
-			}
-		}()
+		defer macOsIfFailedWarning(t)
 	}
+
 	cert := newSelfSignedCert()
 	defer cert.cleanup()
 

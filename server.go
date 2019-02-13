@@ -331,16 +331,17 @@ handler:
 		case ApplicationExtendedRequest:
 			var tlsConn *tls.Conn
 			if n := len(req.Children); n == 1 || n == 2 {
-				if name := ber.DecodeString(req.Children[0].Data.Bytes()); name == oidStartTLS {
+				name := ber.DecodeString(req.Children[0].Data.Bytes())
+				if name == oidStartTLS && server.TLSConfig != nil {
 					tlsConn = tls.Server(conn, server.TLSConfig)
 				}
 			}
-			var ldapResultCode LDAPResultCode
+			var ldapResultCode LDAPResultCode = LDAPResultOperationsError
 			if tlsConn == nil {
 				// Wasn't an upgrade.
 				if server.EnforceTLS {
 					ldapResultCode = LDAPResultProtocolError
-				} else {
+				} else if server.TLSConfig != nil {
 					ldapResultCode = HandleExtendedRequest(req, boundDN, server.ExtendedFns, conn)
 				}
 			} else {
