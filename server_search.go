@@ -26,7 +26,12 @@ func HandleSearchRequest(req *ber.Packet, controls *[]Control, messageID uint64,
 		return NewError(LDAPResultOperationsError, err)
 	}
 
-	searchResp, err := server.Search(boundDN, searchReq, conn)
+	fnNames := []string{}
+	for k := range server.SearchFns {
+		fnNames = append(fnNames, k)
+	}
+	fn := routeFunc(searchReq.BaseDN, fnNames)
+	searchResp, err := server.SearchFns[fn].Search(boundDN, searchReq, conn)
 	if err != nil {
 		return NewError(searchResp.ResultCode, err)
 	}

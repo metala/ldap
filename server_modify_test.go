@@ -15,7 +15,7 @@ func TestAdd(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.Bind = BindAnonOK
+		s.BindFunc("", modifyTestHandler{})
 		s.AddFunc("", modifyTestHandler{})
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -51,7 +51,7 @@ func TestDelete(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.Bind = BindAnonOK
+		s.BindFunc("", modifyTestHandler{})
 		s.DeleteFunc("", modifyTestHandler{})
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -83,7 +83,7 @@ func TestModify(t *testing.T) {
 	defer s.Close()
 	ln, addr := mustListen()
 	go func() {
-		s.Bind = BindAnonOK
+		s.BindFunc("", modifyTestHandler{})
 		s.ModifyFunc("", modifyTestHandler{})
 		if err := s.Serve(ln); err != nil {
 			t.Errorf("s.Serve failed: %s", err.Error())
@@ -152,6 +152,12 @@ func TestModifyDN(t *testing.T) {
 type modifyTestHandler struct {
 }
 
+func (h modifyTestHandler) Bind(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error) {
+	if bindDN == "" && bindSimplePw == "" {
+		return LDAPResultSuccess, nil
+	}
+	return LDAPResultInvalidCredentials, nil
+}
 func (h modifyTestHandler) Add(boundDN string, req AddRequest, conn net.Conn) (LDAPResultCode, error) {
 	// only succeed on expected contents of add.ldif:
 	if len(req.attributes) == 5 && req.dn == "cn=Barbara Jensen,dc=example,dc=com" &&

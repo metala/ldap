@@ -12,9 +12,12 @@ import (
 	"github.com/metala/ldap/internal/asn1-ber"
 )
 
-type BindFunc func(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error)
-type SearchFunc func(boundDN string, req SearchRequest, conn net.Conn) (ServerSearchResult, error)
-
+type Binder interface {
+	Bind(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error)
+}
+type Searcher interface {
+	Search(boundDN string, req SearchRequest, conn net.Conn) (ServerSearchResult, error)
+}
 type Adder interface {
 	Add(boundDN string, req AddRequest, conn net.Conn) (LDAPResultCode, error)
 }
@@ -45,9 +48,8 @@ type Closer interface {
 
 //
 type Server struct {
-	Bind   BindFunc
-	Search SearchFunc
-
+	BindFns     map[string]Binder
+	SearchFns   map[string]Searcher
 	AddFns      map[string]Adder
 	ModifyFns   map[string]Modifier
 	DeleteFns   map[string]Deleter
@@ -87,6 +89,8 @@ func NewServer() *Server {
 	s := new(Server)
 
 	d := defaultHandler{}
+	s.BindFns = make(map[string]Binder)
+	s.SearchFns = make(map[string]Searcher)
 	s.AddFns = make(map[string]Adder)
 	s.ModifyFns = make(map[string]Modifier)
 	s.DeleteFns = make(map[string]Deleter)
@@ -96,10 +100,8 @@ func NewServer() *Server {
 	s.ExtendedFns = make(map[string]Extender)
 	s.UnbindFns = make(map[string]Unbinder)
 	s.CloseFns = make(map[string]Closer)
-
-	s.Bind = d.Bind
-	s.Search = d.Search
-
+	s.BindFunc("", d)
+	s.SearchFunc("", d)
 	s.AddFunc("", d)
 	s.ModifyFunc("", d)
 	s.DeleteFunc("", d)
@@ -113,6 +115,12 @@ func NewServer() *Server {
 
 	s.closing = make(chan struct{})
 	return s
+}
+func (server *Server) BindFunc(baseDN string, f Binder) {
+	server.BindFns[baseDN] = f
+}
+func (server *Server) SearchFunc(baseDN string, f Searcher) {
+	server.SearchFns[baseDN] = f
 }
 func (server *Server) AddFunc(baseDN string, f Adder) {
 	server.AddFns[baseDN] = f
@@ -296,7 +304,7 @@ handler:
 
 		case ApplicationBindRequest:
 			server.Stats.countBinds(1)
-			ldapResultCode := HandleBindRequest(req, server.Bind, conn)
+			ldapResultCode := HandleBindRequest(req, server.BindFns, conn)
 			if ldapResultCode == LDAPResultSuccess {
 				boundDN, ok = req.Children[1].Value.(string)
 				if !ok {

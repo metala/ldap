@@ -7,7 +7,7 @@ import (
 	"github.com/metala/ldap/internal/asn1-ber"
 )
 
-func HandleBindRequest(req *ber.Packet, fn BindFunc, conn net.Conn) (resultCode LDAPResultCode) {
+func HandleBindRequest(req *ber.Packet, fns map[string]Binder, conn net.Conn) (resultCode LDAPResultCode) {
 	defer func() {
 		if r := recover(); r != nil {
 			resultCode = LDAPResultOperationsError
@@ -36,7 +36,12 @@ func HandleBindRequest(req *ber.Packet, fn BindFunc, conn net.Conn) (resultCode 
 		return LDAPResultInappropriateAuthentication
 	case LDAPBindAuthSimple:
 		if len(req.Children) == 3 {
-			resultCode, err := fn(bindDN, bindAuth.Data.String(), conn)
+			fnNames := []string{}
+			for k := range fns {
+				fnNames = append(fnNames, k)
+			}
+			fn := routeFunc(bindDN, fnNames)
+			resultCode, err := fns[fn].Bind(bindDN, bindAuth.Data.String(), conn)
 			if err != nil {
 				log.Printf("BindFn Error %s", err.Error())
 				return LDAPResultOperationsError
