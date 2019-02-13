@@ -2,6 +2,7 @@ package ldap
 
 import (
 	"crypto/tls"
+	"errors"
 	"io"
 	"log"
 	"net"
@@ -60,7 +61,8 @@ type Server struct {
 	Stats       *Stats
 
 	// If set, server will accept StartTLS.
-	TLSConfig *tls.Config
+	TLSConfig  *tls.Config
+	EnforceTLS bool
 
 	closing chan struct{}
 }
@@ -187,6 +189,10 @@ func (server *Server) ListenAndServe(listenString string) error {
 }
 
 func (server *Server) Serve(ln net.Listener) error {
+	if server.TLSConfig == nil && server.EnforceTLS {
+		return errors.New(errorEnforceTLSRequiresTLSConfig)
+	}
+
 	newConn := make(chan net.Conn)
 	go func() {
 		for {
@@ -262,6 +268,19 @@ handler:
 			}
 		}
 
+		// Enforce TLS
+		switch conn.(type) {
+		case *tls.Conn:
+		default:
+			if server.EnforceTLS && req.Tag != ApplicationExtendedRequest {
+				responsePacket := encodeLDAPResponse(messageID, ApplicationExtendedResponse, LDAPResultProtocolError, "Upgrade to TLS is required")
+				if err = sendPacket(conn, responsePacket); err != nil {
+					log.Printf("sendPacket error %s", err.Error())
+				}
+				break handler
+			}
+		}
+
 		//log.Printf("DEBUG: handling operation: %s [%d]", ApplicationMap[req.Tag], req.Tag)
 		//ber.PrintPacket(packet) // DEBUG
 
@@ -318,8 +337,12 @@ handler:
 			}
 			var ldapResultCode LDAPResultCode
 			if tlsConn == nil {
-				// Wasn't an upgrade. Pass through.
-				ldapResultCode = HandleExtendedRequest(req, boundDN, server.ExtendedFns, conn)
+				// Wasn't an upgrade.
+				if server.EnforceTLS {
+					ldapResultCode = LDAPResultProtocolError
+				} else {
+					ldapResultCode = HandleExtendedRequest(req, boundDN, server.ExtendedFns, conn)
+				}
 			} else {
 				ldapResultCode = LDAPResultSuccess
 			}
@@ -330,6 +353,8 @@ handler:
 			}
 			if tlsConn != nil {
 				conn = tlsConn
+			} else if server.EnforceTLS {
+				break handler
 			}
 		case ApplicationAbandonRequest:
 			HandleAbandonRequest(req, boundDN, server.AbandonFns, conn)
