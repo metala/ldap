@@ -10,21 +10,21 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mark-rushakoff/ldapserver"
+	ldapserver "github.com/metala/ldap"
 )
 
 var (
 	LdapServer string   = "localhost"
-	LdapPort   uint16   = 389
+	LdapPort   uint16   = 636
 	BaseDN     string   = "dc=enterprise,dc=org"
 	Filter     string   = "(cn=kirkj)"
 	Attributes []string = []string{"mail"}
 )
 
 func main() {
-	l, err := ldapserver.DialTLS("tcp", fmt.Sprintf("%s:%d", LdapServer, LdapPort), nil)
+	l, err := ldapserver.DialSSL("tcp", fmt.Sprintf("%s:%d", LdapServer, LdapPort), nil)
 	if err != nil {
-		log.Fatalf("ERROR: %s\n", err.Error())
+		log.Fatalf("ERROR: %s\n", err.String())
 	}
 	defer l.Close()
 	// l.Debug = true
@@ -38,7 +38,7 @@ func main() {
 
 	sr, err := l.Search(search)
 	if err != nil {
-		log.Fatalf("ERROR: %s\n", err.Error())
+		log.Fatalf("ERROR: %s\n", err.String())
 		return
 	}
 

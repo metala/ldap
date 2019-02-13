@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/mark-rushakoff/ldapserver"
+	ldapserver "github.com/metala/ldap"
 )
 
 var (

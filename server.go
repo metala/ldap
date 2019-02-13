@@ -1,4 +1,4 @@
-package ldapserver
+package ldap
 
 import (
 	"crypto/tls"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
+	"github.com/metala/ldap/internal/asn1-ber"
 )
 
 type BindFunc func(bindDN, bindSimplePw string, conn net.Conn) (LDAPResultCode, error)

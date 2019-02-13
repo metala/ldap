@@ -1,4 +1,4 @@
-package ldapserver
+package ldap
 
 import (
 	"bytes"

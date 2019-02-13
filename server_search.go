@@ -1,4 +1,4 @@
-package ldapserver
+package ldap
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
+	"github.com/metala/ldap/internal/asn1-ber"
 )
 
 func HandleSearchRequest(req *ber.Packet, controls *[]Control, messageID uint64, boundDN string, server *Server, conn net.Conn) (resultErr error) {

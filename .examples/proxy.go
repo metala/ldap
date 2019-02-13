@@ -3,10 +3,11 @@ package main
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/mark-rushakoff/ldapserver"
 	"log"
 	"net"
 	"sync"
+
+	ldapserver "github.com/metala/ldap"
 )
 
 type ldapHandler struct {

@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package ldapserver
+package ldap
 
 import (
 	"errors"
 	"fmt"
-	"github.com/mark-rushakoff/ldapserver/internal/asn1-ber"
 	"strings"
+
+	"github.com/metala/ldap/internal/asn1-ber"
 )
 
 const (
