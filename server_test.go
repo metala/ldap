@@ -387,7 +387,6 @@ func TestBindSimpleFailBadDn(t *testing.T) {
 
 /////////////////////////
 func TestBindSSL(t *testing.T) {
-	t.Skip("unclear how to configure ldapsearch command to trust or skip verification of a custom SSL cert")
 	longerTimeout := 300 * time.Millisecond
 	done := make(chan bool)
 	s := NewServer()
@@ -415,7 +414,8 @@ func TestBindSSL(t *testing.T) {
 
 	go func() {
 		time.Sleep(longerTimeout)
-		cmd := exec.Command("ldapsearch", "-H", ldapURLSSL, "-x", "-b", "o=testers,c=test")
+		cmd := exec.Command("ldapsearch", "-H", ldapURLSSL, "-d", "1", "-x", "-b", "o=testers,c=test")
+		cmd.Env = append(cmd.Env, "LDAPTLS_REQCERT=allow")
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			t.Error(err)
